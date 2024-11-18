@@ -3,10 +3,14 @@ library(tidyverse)
 
 ## read in the data 
 data <- read.csv("data-processed/synchrony-results.csv")
-lpi <- read.csv("data-processed/lpi-subset-with-cost.csv")
+lpi <- read.csv("data-processed/lpi-subset-with-cost.csv") 
+coords <- read.csv("data-processed/pop-distance-key-with-cost.csv")
+
+key = select(lpi, Class, Binomial) %>%
+  unique()
 
 ## add group variable
-data <- left_join(data, select(lpi, Class, Binomial))
+data <- left_join(data, key)
 
 ## exclude populations whose time series have less than 5 observations
 data <- data %>%
@@ -48,7 +52,7 @@ data %>%
   ggplot(aes(x = n_obs, y = pearson_corr, colour = dist)) +
   geom_point() +
   geom_smooth(method = "lm", inherit.aes = FALSE,
-              aes(x = n_obs, y = pearson_corr), colour = "black") +
+              aes(x = n_obs, y = pearson_corr, group = Class), colour = "black") +
   theme() +
   scale_colour_viridis_b() +
   facet_wrap(~Class)
@@ -59,7 +63,12 @@ data %>%
   geom_smooth(method = "lm", inherit.aes = FALSE,
               aes(x = dist, y = cost), colour = "black") +
   theme() +
-  scale_colour_viridis_b() 
+  labs(x = "Linear distance between populations (km)",
+       y = "Distance of least resistance path between populations (km)",
+       colour = "Pearson\ncorrelation\ncoefficient")
+
+ggsave(path = "figures", filename = "distance-vs-cost-distance.png", 
+       width = 7, height = 4.5)
 
 ## fit model with distance as explanatory variable
 mod_dist <- lm(data = data,
@@ -126,7 +135,7 @@ newdata_cost$pred_se <- pred$se.fit
 
 ## cost vs. correlation
 data %>%
-  ggplot(aes(x = cost, y = pearson_corr, colour = Class)) +
+  ggplot(aes(x = cost, y = pearson_corr)) +
   geom_point() +
   theme() +
   geom_line(data = newdata_cost, 
@@ -140,12 +149,36 @@ data %>%
               alpha = 0.25,
               colour = NA,
               inherit.aes = F) +
-  labs(x = "Least cost distance between populations (km)",
+  labs(x = "Distance of least resistance path between populations (km)",
        y = "Pearson correlation coefficient",
        colour = "Taxonomic\ngroup")
 
-ggsave(path = "figures", filename = "synchrony-vs-cost-distance.png", 
+
+ggsave(path = "figures", filename = "synchrony-vs-cost-distance_no-colour.png", 
        width = 6, height = 4)
+
+data %>%
+  ggplot(aes(x = cost, y = pearson_corr, colour = dist)) +
+  geom_point() +
+  theme() +
+  geom_line(data = newdata_cost, 
+            aes(x = cost, y = pred,),
+            inherit.aes = FALSE) +
+  geom_ribbon(data = newdata_cost, 
+              aes(x = cost,
+                  ymin = (pred-1.96*pred_se),
+                  ymax = (pred+1.96*pred_se)),
+              fill = "darkgrey",
+              alpha = 0.25,
+              colour = NA,
+              inherit.aes = F) +
+  labs(x = "Distance of least resistance path between populations (km)",
+       y = "Pearson correlation coefficient",
+       colour = "Linear\ndistance\nbetween\npopulations (km)")
+
+ggsave(path = "figures", filename = "synchrony-vs-cost-distance_colour.png", 
+       width = 7, height = 4)
+
 
 ## distance vs. correlation
 data %>%
@@ -172,11 +205,44 @@ ggsave(path = "figures", filename = "synchrony-vs-distance.png",
 
 
 
+## plot map of final populations
+ggplot(na, aes(x=long, y=lat, group = group)) + theme_minimal() + 
+  geom_polygon(fill = "grey") + 
+  coord_fixed() +
+  labs(y = "Latitude", x = "Longitude") +
+  geom_point(data = lpi, 
+             aes(x = Longitude, y = Latitude, colour = Binomial),
+             inherit.aes = FALSE, 
+             size = 0.75) +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(-180, -50)) +
+  geom_segment(data = data,
+               aes(x = Longitude1, y = Latitude1, xend = Longitude2, yend = Latitude2, colour = Binomial), 
+               inherit.aes = FALSE, linewidth = .4) 
+
+ggsave(width = 5, height = 3, path = "figures", filename = "map-of-populations_final.png")
+
+
 ## predict:
 ## cost distance explains variation in synchrony better than linear distance between populations 
 ## cost distance + accumulated cost explain variation in synchronous between populations better than cost distance alone 
 
-## next: calculate accumulated cost? 
+## plot examples
+
+
+
+
+
+
+
+
+## next: 
+## add n_obs to model?
+## calculate accumulated cost? 
+## update map
+## make figures for presentation
+
+
 
 accCost(matrix, fromCoords)
 ## do for each coord of pop_1, extract value at coord of pop_2
@@ -184,7 +250,6 @@ accCost(matrix, fromCoords)
 all.equal(rownames(comm), rownames(metadata))
 
 metadata <- metadata[rownames(comm), ]
-
 
 
 

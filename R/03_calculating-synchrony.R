@@ -102,3 +102,35 @@ results %>%
               aes(x = cost, y = pearson_corr), colour = 'black') +
   theme() +
   scale_colour_viridis_b()
+
+## plot two with high synchrony
+long <- read.csv("data-processed/lpi-subset-long.csv")
+
+which(results$pearson_corr == max(results$pearson_corr, na.rm = T))
+
+results$pop_1[94]
+results$pop_2[94]
+
+long %>%
+  filter(pop_id %in% c("Hirundo_rustica-11", "Hirundo_rustica-6")) %>%
+  ggplot(aes(x = year, y = pop_size, colour = pop_id)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Year", y = "Population size") +
+  theme(legend.position = "none")
+  
+ggsave(path = "figures", filename = "pop-time-series_high-synchrony.png", width = 4, height = 2)
+
+long %>%
+  filter(pop_id %in% c("Numenius_americanus-3","Numenius_americanus-1")) %>%
+  ggplot(aes(x = year, y = pop_size, colour = pop_id)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Year", y = "Population size") +
+  theme(legend.position = "none")
+
+ggsave(path = "figures", filename = "pop-time-series_low-synchrony.png", width = 4, height = 2)
+
+## and low synchrony
+
+

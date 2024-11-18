@@ -35,7 +35,9 @@ ggplot() +
   scale_fill_binned(type = 'viridis',
                     na.value = "transparent", 
                     breaks = c(0, seq(from = 1, to = 12, by = 1))) +
-  labs(fill = "Normalized cumulative current flow")
+  labs(fill = "Current flow",y = "Latitude", x = "Longitude") 
+
+ggsave(width = 5, height = 5, path = "figures", filename = "map-of-current-flow.png")
 
 
 ## calculate the cost along the least cost path between each population 
